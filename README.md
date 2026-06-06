@@ -39,11 +39,17 @@ npm install react react-dom
 In your app entry (e.g. `app/layout.tsx` or `main.tsx`):
 
 ```tsx
-import "@blitheforge/media-library/styles.css";
 import "./globals.css";
+import "@blitheforge/media-library/styles.css";
 ```
 
-Import the library **before** your globals. Library utilities are scoped to a lower CSS layer so they will not override your app's responsive classes (e.g. `lg:block`).
+Import the library **after** your globals so its utilities take precedence over your app's Tailwind layers (required for modal sizing, grid layout, buttons, etc.).
+
+Optionally add this to your globals so Tailwind also scans the package JS:
+
+```css
+@source "../node_modules/@blitheforge/media-library/dist/index.js";
+```
 
 Do **not** add `@source` for this package in your app Tailwind config.
 
