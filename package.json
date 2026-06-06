@@ -1,6 +1,6 @@
 {
   "name": "@blitheforge/media-library",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tailwind-based React media library with nested folders, upload, and configurable API URLs.",
   "license": "MIT",
   "author": "Mahadi Hasan",
