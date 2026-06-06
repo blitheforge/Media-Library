@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@layer bfml;
+@import "tailwindcss/utilities" layer(bfml);
 @source "./**/*.{ts,tsx}";
 
 .bfml-root {

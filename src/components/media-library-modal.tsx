@@ -10,6 +10,11 @@ export function MediaLibraryModal({
   open,
   onClose,
   onSelect,
+  onSelectMany,
+  closeOnSelect = true,
+  selectionMode = "single",
+  maxSelections,
+  autoSelectUploads = false,
   config,
   theme,
   title = "Media Library",
@@ -42,6 +47,11 @@ export function MediaLibraryModal({
         accept={accept}
         onClose={onClose}
         onSelect={onSelect}
+        onSelectMany={onSelectMany}
+        closeOnSelect={closeOnSelect}
+        selectionMode={selectionMode}
+        maxSelections={maxSelections}
+        autoSelectUploads={autoSelectUploads}
       />
     </div>,
     document.body

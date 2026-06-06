@@ -34,8 +34,13 @@ export function MediaLibraryPanel({
   accept,
   variant = "embedded",
   selectable = false,
+  closeOnSelect = true,
+  selectionMode = "single",
+  maxSelections,
+  autoSelectUploads = false,
   onClose,
   onSelect,
+  onSelectMany,
   className
 }: MediaLibraryPanelProps) {
   const client = useMemo(() => createMediaLibraryClient(config), [config]);
@@ -57,6 +62,7 @@ export function MediaLibraryPanel({
   const [folders, setFolders] = useState<Array<{ name: string; path: string }>>([]);
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [selected, setSelected] = useState<MediaFile | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -86,6 +92,7 @@ export function MediaLibraryPanel({
   useEffect(() => {
     if (!active) return;
     setSelected(null);
+    setSelectedFiles([]);
     setDeleteTarget(null);
     setSidebarOpen(false);
     clearUploadQueue();
@@ -169,6 +176,7 @@ export function MediaLibraryPanel({
     setUploadQueue(queue);
     setUploading(true);
 
+    const uploadedFiles: MediaFile[] = [];
     let successCount = 0;
     for (const item of queue) {
       setUploadQueue((current) =>
@@ -176,7 +184,8 @@ export function MediaLibraryPanel({
       );
 
       try {
-        await client.uploadOne(currentPath, item.file);
+        const uploaded = await client.uploadOne(currentPath, item.file);
+        uploadedFiles.push(uploaded);
         successCount += 1;
         URL.revokeObjectURL(item.previewUrl);
         setUploadQueue((current) => current.filter((entry) => entry.id !== item.id));
@@ -195,6 +204,11 @@ export function MediaLibraryPanel({
 
     if (successCount > 0) {
       toastSuccess(successCount === 1 ? "File uploaded successfully." : `${successCount} files uploaded successfully.`);
+      if (autoSelectUploads && onSelectMany && uploadedFiles.length > 0) {
+        const limit = maxSelections ?? uploadedFiles.length;
+        onSelectMany(uploadedFiles.slice(0, limit));
+        onClose?.();
+      }
     }
 
     setUploading(false);
@@ -273,13 +287,40 @@ export function MediaLibraryPanel({
     setSidebarOpen(false);
   }
 
+  function toggleFileSelection(file: MediaFile) {
+    setSelectedFiles((current) => {
+      const exists = current.some((item) => item.path === file.path);
+      if (exists) {
+        return current.filter((item) => item.path !== file.path);
+      }
+      const limit = maxSelections ?? Number.POSITIVE_INFINITY;
+      if (current.length >= limit) {
+        toastWarning(`You can add up to ${limit} file${limit === 1 ? "" : "s"} at a time.`);
+        return current;
+      }
+      return [...current, file];
+    });
+    setSelected(file);
+  }
+
   function confirmSelection() {
+    if (selectionMode === "multi" && onSelectMany) {
+      if (selectedFiles.length === 0) return;
+      onSelectMany(selectedFiles);
+      onClose?.();
+      return;
+    }
     if (!selected) return;
     onSelect?.(selected);
-    onClose?.();
+    if (closeOnSelect) onClose?.();
+    else setSelected(null);
   }
 
   function handleFileClick(file: MediaFile) {
+    if (selectionMode === "multi" && onSelectMany) {
+      toggleFileSelection(file);
+      return;
+    }
     setSelected(file);
     if (!selectable && onSelect) {
       onSelect(file);
@@ -287,10 +328,16 @@ export function MediaLibraryPanel({
   }
 
   function handleFileDoubleClick(file: MediaFile) {
+    if (selectionMode === "multi" && onSelectMany) {
+      onSelectMany([file]);
+      onClose?.();
+      return;
+    }
     setSelected(file);
     if (selectable) {
       onSelect?.(file);
-      onClose?.();
+      if (closeOnSelect) onClose?.();
+      else setSelected(null);
     } else if (onSelect) {
       onSelect(file);
     }
@@ -301,6 +348,9 @@ export function MediaLibraryPanel({
   const crumbs = buildBreadcrumb(currentPath, resolved.rootLabel ?? "Root");
   const sidebarFolders = [{ name: resolved.rootLabel ?? "Root", path: "" }, ...folders];
   const showFooter = selectable;
+  const isMultiSelect = selectionMode === "multi" && Boolean(onSelectMany);
+  const footerSelectionCount = isMultiSelect ? selectedFiles.length : selected ? 1 : 0;
+  const footerCanConfirm = isMultiSelect ? selectedFiles.length > 0 : Boolean(selected);
   const showCloseButton = variant === "modal" && Boolean(onClose);
 
   const sidebarFolderList = (
@@ -376,7 +426,7 @@ export function MediaLibraryPanel({
 
       <ToastContainer theme={themeMode} />
 
-      <div className="relative flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,240px)_1fr]">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,240px)_1fr] lg:grid-rows-1">
         {sidebarOpen ? (
           <button
             type="button"
@@ -389,7 +439,7 @@ export function MediaLibraryPanel({
 
         <aside
           className={cn(
-            "absolute inset-y-0 left-0 z-30 flex w-[min(88vw,280px)] flex-col overflow-y-auto border-r border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] p-4 shadow-xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:shadow-none",
+            "absolute inset-y-0 left-0 z-30 flex w-[min(88vw,280px)] flex-col overflow-y-auto border-r border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] p-4 shadow-xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:h-full lg:min-h-0 lg:w-auto lg:translate-x-0 lg:shadow-none",
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
         >
@@ -428,7 +478,7 @@ export function MediaLibraryPanel({
           {sidebarFolderList}
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 sm:p-5">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-5 lg:h-full lg:min-h-0">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               type="button"
@@ -560,7 +610,9 @@ export function MediaLibraryPanel({
                 ))}
 
                 {files.map((file) => {
-                  const fileActive = selected?.path === file.path;
+                  const fileActive = isMultiSelect
+                    ? selectedFiles.some((item) => item.path === file.path)
+                    : selected?.path === file.path;
                   const isImage = file.mimeType.startsWith("image/");
                   return (
                     <div
@@ -618,10 +670,20 @@ export function MediaLibraryPanel({
       {showFooter ? (
         <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-[var(--bfml-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-4">
           <p className="truncate text-center text-sm text-[var(--bfml-muted-foreground)] sm:text-left">
-            Selected: {selected ? selected.name : "None"}
+            {isMultiSelect
+              ? footerSelectionCount === 0
+                ? "Select one or more files"
+                : `${footerSelectionCount} file${footerSelectionCount === 1 ? "" : "s"} selected`
+              : `Selected: ${selected ? selected.name : "None"}`}
           </p>
-          <Button type="button" className="w-full sm:w-auto" disabled={!selected} onClick={confirmSelection}>
-            Done
+          <Button type="button" className="w-full sm:w-auto" disabled={!footerCanConfirm} onClick={confirmSelection}>
+            {isMultiSelect
+              ? footerSelectionCount > 0
+                ? `Add ${footerSelectionCount} file${footerSelectionCount === 1 ? "" : "s"}`
+                : "Add files"
+              : closeOnSelect
+                ? "Done"
+                : "Add"}
           </Button>
         </footer>
       ) : null}

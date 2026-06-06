@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { ImagePlus, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
 import { cn } from "../utils/cn";
 import { bfmlRootProps, resolveThemeMode } from "../utils/bfml-theme";
 import { fileNameFromPath } from "../client";
-import { MediaLibraryModal, MediaPreview } from "./media-library-modal";
+import { MediaLibraryModal } from "./media-library-modal";
+import { PickerThumbnail } from "./picker-thumbnail";
 import type { MediaPickerProps } from "../types";
 
 export function MediaPicker({
@@ -11,8 +12,6 @@ export function MediaPicker({
   label = "Choose image",
   title = "Media Library",
   description = "Create folders, upload files, and choose media.",
-  previewTitle = "Live preview",
-  previewDescription = "The selected media library file will be used in the table and detail page.",
   value,
   defaultValue = "",
   onChange,
@@ -26,6 +25,10 @@ export function MediaPicker({
   const [open, setOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState(value ?? defaultValue);
 
+  useEffect(() => {
+    if (value !== undefined) setSelectedPath(value);
+  }, [value]);
+
   function handleSelect(file: { url: string }) {
     setSelectedPath(file.url);
     onChange?.(file.url);
@@ -33,9 +36,10 @@ export function MediaPicker({
   }
 
   const currentValue = value ?? selectedPath;
+  const fileName = currentValue ? fileNameFromPath(currentValue) : null;
 
   return (
-    <div {...rootProps} className={cn(rootProps.className, "space-y-4", className)}>
+    <div {...rootProps} className={cn(rootProps.className, "space-y-2", className)}>
       {label ? <label className="text-sm font-medium text-[var(--bfml-foreground)]">{label}</label> : null}
 
       <button
@@ -43,26 +47,17 @@ export function MediaPicker({
         onClick={() => setOpen(true)}
         className="flex w-full items-center gap-3 rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] px-3 py-3 text-left transition hover:border-[var(--bfml-primary-border)] hover:bg-[var(--bfml-surface)] sm:gap-4 sm:px-4 sm:py-4"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bfml-surface)] text-[var(--bfml-primary)] sm:h-12 sm:w-12">
-          <ImagePlus className="h-5 w-5" aria-hidden="true" />
-        </span>
+        <PickerThumbnail path={currentValue} alt={fileName ?? label} />
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-[var(--bfml-foreground)]">{label}</span>
-          <span className="mt-0.5 block text-xs text-[var(--bfml-muted-foreground)]">Select from folders or upload new</span>
+          <span className="block truncate text-sm font-semibold text-[var(--bfml-foreground)]">{label}</span>
+          <span className="mt-0.5 block truncate text-xs text-[var(--bfml-muted-foreground)]">
+            {fileName ?? "Select from folders or upload new"}
+          </span>
         </span>
         <Upload className="hidden h-5 w-5 shrink-0 text-[var(--bfml-muted-foreground)] sm:block" aria-hidden="true" />
       </button>
 
       <input type="hidden" name={name} value={currentValue} />
-
-      <div className="rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] p-3 sm:p-4">
-        <p className="text-sm font-semibold text-[var(--bfml-foreground)]">{previewTitle}</p>
-        <p className="mt-1 text-xs text-[var(--bfml-muted-foreground)]">{previewDescription}</p>
-        <div className="mt-4">
-          <MediaPreview path={currentValue} alt={fileNameFromPath(currentValue)} />
-        </div>
-        {currentValue ? <p className="mt-2 truncate text-xs text-[var(--bfml-muted-foreground)]">{fileNameFromPath(currentValue)}</p> : null}
-      </div>
 
       <MediaLibraryModal
         open={open}

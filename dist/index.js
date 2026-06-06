@@ -406,8 +406,13 @@ function MediaLibraryPanel({
   accept,
   variant = "embedded",
   selectable = false,
+  closeOnSelect = true,
+  selectionMode = "single",
+  maxSelections,
+  autoSelectUploads = false,
   onClose,
   onSelect,
+  onSelectMany,
   className
 }) {
   const client = useMemo(() => createMediaLibraryClient(config), [config]);
@@ -428,6 +433,7 @@ function MediaLibraryPanel({
   const [folders, setFolders] = useState2([]);
   const [files, setFiles] = useState2([]);
   const [selected, setSelected] = useState2(null);
+  const [selectedFiles, setSelectedFiles] = useState2([]);
   const [deleteTarget, setDeleteTarget] = useState2(null);
   const [deleting, setDeleting] = useState2(false);
   const [sidebarOpen, setSidebarOpen] = useState2(false);
@@ -454,6 +460,7 @@ function MediaLibraryPanel({
   useEffect2(() => {
     if (!active) return;
     setSelected(null);
+    setSelectedFiles([]);
     setDeleteTarget(null);
     setSidebarOpen(false);
     clearUploadQueue();
@@ -527,13 +534,15 @@ function MediaLibraryPanel({
     }));
     setUploadQueue(queue);
     setUploading(true);
+    const uploadedFiles = [];
     let successCount = 0;
     for (const item of queue) {
       setUploadQueue(
         (current) => current.map((entry) => entry.id === item.id ? { ...entry, status: "uploading" } : entry)
       );
       try {
-        await client.uploadOne(currentPath, item.file);
+        const uploaded = await client.uploadOne(currentPath, item.file);
+        uploadedFiles.push(uploaded);
         successCount += 1;
         URL.revokeObjectURL(item.previewUrl);
         setUploadQueue((current) => current.filter((entry) => entry.id !== item.id));
@@ -551,6 +560,11 @@ function MediaLibraryPanel({
     }
     if (successCount > 0) {
       toastSuccess(successCount === 1 ? "File uploaded successfully." : `${successCount} files uploaded successfully.`);
+      if (autoSelectUploads && onSelectMany && uploadedFiles.length > 0) {
+        const limit = maxSelections ?? uploadedFiles.length;
+        onSelectMany(uploadedFiles.slice(0, limit));
+        onClose?.();
+      }
     }
     setUploading(false);
     if (uploadInputRef.current) uploadInputRef.current.value = "";
@@ -616,22 +630,54 @@ function MediaLibraryPanel({
     void load(path, search);
     setSidebarOpen(false);
   }
+  function toggleFileSelection(file) {
+    setSelectedFiles((current) => {
+      const exists = current.some((item) => item.path === file.path);
+      if (exists) {
+        return current.filter((item) => item.path !== file.path);
+      }
+      const limit = maxSelections ?? Number.POSITIVE_INFINITY;
+      if (current.length >= limit) {
+        toastWarning(`You can add up to ${limit} file${limit === 1 ? "" : "s"} at a time.`);
+        return current;
+      }
+      return [...current, file];
+    });
+    setSelected(file);
+  }
   function confirmSelection() {
+    if (selectionMode === "multi" && onSelectMany) {
+      if (selectedFiles.length === 0) return;
+      onSelectMany(selectedFiles);
+      onClose?.();
+      return;
+    }
     if (!selected) return;
     onSelect?.(selected);
-    onClose?.();
+    if (closeOnSelect) onClose?.();
+    else setSelected(null);
   }
   function handleFileClick(file) {
+    if (selectionMode === "multi" && onSelectMany) {
+      toggleFileSelection(file);
+      return;
+    }
     setSelected(file);
     if (!selectable && onSelect) {
       onSelect(file);
     }
   }
   function handleFileDoubleClick(file) {
+    if (selectionMode === "multi" && onSelectMany) {
+      onSelectMany([file]);
+      onClose?.();
+      return;
+    }
     setSelected(file);
     if (selectable) {
       onSelect?.(file);
-      onClose?.();
+      if (closeOnSelect) onClose?.();
+      else setSelected(null);
     } else if (onSelect) {
       onSelect(file);
     }
@@ -640,6 +686,9 @@ function MediaLibraryPanel({
   const crumbs = buildBreadcrumb(currentPath, resolved.rootLabel ?? "Root");
   const sidebarFolders = [{ name: resolved.rootLabel ?? "Root", path: "" }, ...folders];
   const showFooter = selectable;
+  const isMultiSelect = selectionMode === "multi" && Boolean(onSelectMany);
+  const footerSelectionCount = isMultiSelect ? selectedFiles.length : selected ? 1 : 0;
+  const footerCanConfirm = isMultiSelect ? selectedFiles.length > 0 : Boolean(selected);
   const showCloseButton = variant === "modal" && Boolean(onClose);
   const sidebarFolderList = /* @__PURE__ */ jsx6("div", { className: "mt-4 space-y-1 lg:mt-5", children: sidebarFolders.map((folder) => {
     const folderActive = folder.path === currentPath;
@@ -705,7 +754,7 @@ function MediaLibraryPanel({
           showCloseButton ? /* @__PURE__ */ jsx6(Button, { type: "button", variant: "ghost", className: "h-10 w-10 shrink-0 px-0", onClick: onClose, "aria-label": "Close media library", children: /* @__PURE__ */ jsx6(X2, { className: "h-4 w-4", "aria-hidden": "true" }) }) : null
         ] }),
         /* @__PURE__ */ jsx6(ToastContainer, { theme: themeMode }),
-        /* @__PURE__ */ jsxs4("div", { className: "relative flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,240px)_1fr]", children: [
+        /* @__PURE__ */ jsxs4("div", { className: "relative flex min-h-0 flex-1 flex-col overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,240px)_1fr] lg:grid-rows-1", children: [
           sidebarOpen ? /* @__PURE__ */ jsx6(
             "button",
             {
@@ -720,7 +769,7 @@ function MediaLibraryPanel({
             "aside",
             {
               className: cn(
-                "absolute inset-y-0 left-0 z-30 flex w-[min(88vw,280px)] flex-col overflow-y-auto border-r border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] p-4 shadow-xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:shadow-none",
+                "absolute inset-y-0 left-0 z-30 flex w-[min(88vw,280px)] flex-col overflow-y-auto border-r border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] p-4 shadow-xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:h-full lg:min-h-0 lg:w-auto lg:translate-x-0 lg:shadow-none",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
               ),
               children: [
@@ -758,7 +807,7 @@ function MediaLibraryPanel({
               ]
             }
           ),
-          /* @__PURE__ */ jsxs4("div", { className: "flex min-h-0 min-w-0 flex-1 flex-col p-3 sm:p-5", children: [
+          /* @__PURE__ */ jsxs4("div", { className: "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-5 lg:h-full lg:min-h-0", children: [
             /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2 sm:gap-3", children: [
               /* @__PURE__ */ jsxs4(
                 Button,
@@ -886,7 +935,7 @@ function MediaLibraryPanel({
                       folder.path
                     )),
                     files.map((file) => {
-                      const fileActive = selected?.path === file.path;
+                      const fileActive = isMultiSelect ? selectedFiles.some((item) => item.path === file.path) : selected?.path === file.path;
                       const isImage = file.mimeType.startsWith("image/");
                       return /* @__PURE__ */ jsxs4(
                         "div",
@@ -937,11 +986,8 @@ function MediaLibraryPanel({
           ] })
         ] }),
         showFooter ? /* @__PURE__ */ jsxs4("footer", { className: "flex shrink-0 flex-col-reverse gap-2 border-t border-[var(--bfml-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-4", children: [
-          /* @__PURE__ */ jsxs4("p", { className: "truncate text-center text-sm text-[var(--bfml-muted-foreground)] sm:text-left", children: [
-            "Selected: ",
-            selected ? selected.name : "None"
-          ] }),
-          /* @__PURE__ */ jsx6(Button, { type: "button", className: "w-full sm:w-auto", disabled: !selected, onClick: confirmSelection, children: "Done" })
+          /* @__PURE__ */ jsx6("p", { className: "truncate text-center text-sm text-[var(--bfml-muted-foreground)] sm:text-left", children: isMultiSelect ? footerSelectionCount === 0 ? "Select one or more files" : `${footerSelectionCount} file${footerSelectionCount === 1 ? "" : "s"} selected` : `Selected: ${selected ? selected.name : "None"}` }),
+          /* @__PURE__ */ jsx6(Button, { type: "button", className: "w-full sm:w-auto", disabled: !footerCanConfirm, onClick: confirmSelection, children: isMultiSelect ? footerSelectionCount > 0 ? `Add ${footerSelectionCount} file${footerSelectionCount === 1 ? "" : "s"}` : "Add files" : closeOnSelect ? "Done" : "Add" })
         ] }) : null,
         /* @__PURE__ */ jsx6(
           ConfirmDialog,
@@ -969,6 +1015,11 @@ function MediaLibraryModal({
   open,
   onClose,
   onSelect,
+  onSelectMany,
+  closeOnSelect = true,
+  selectionMode = "single",
+  maxSelections,
+  autoSelectUploads = false,
   config,
   theme,
   title = "Media Library",
@@ -1001,7 +1052,12 @@ function MediaLibraryModal({
             description,
             accept,
             onClose,
-            onSelect
+            onSelect,
+            onSelectMany,
+            closeOnSelect,
+            selectionMode,
+            maxSelections,
+            autoSelectUploads
           }
         )
       }
@@ -1070,16 +1126,76 @@ function MediaLibraryWidget({
 }
 
 // src/components/media-picker.tsx
-import { useState as useState3 } from "react";
-import { ImagePlus as ImagePlus2, Upload as Upload2 } from "lucide-react";
+import { useEffect as useEffect3, useState as useState3 } from "react";
+import { Upload as Upload2 } from "lucide-react";
+
+// src/components/picker-thumbnail.tsx
+import { FileText, ImagePlus as ImagePlus2 } from "lucide-react";
 import { jsx as jsx9, jsxs as jsxs5 } from "react/jsx-runtime";
+var sizeClasses = {
+  sm: "h-9 w-9",
+  md: "h-10 w-10 sm:h-12 sm:w-12",
+  grid: "h-full w-full"
+};
+function PickerThumbnail({
+  path,
+  alt,
+  size = "md",
+  shape = "circle",
+  className
+}) {
+  const isImage = Boolean(path && isImagePath(path));
+  const rounded = shape === "circle" ? "rounded-full" : "rounded-lg";
+  return /* @__PURE__ */ jsx9(
+    "span",
+    {
+      className: cn(
+        "flex shrink-0 items-center justify-center overflow-hidden border border-[var(--bfml-border)] bg-[var(--bfml-surface)]",
+        size !== "grid" && sizeClasses[size],
+        rounded,
+        !path && "text-[var(--bfml-primary)]",
+        className
+      ),
+      children: !path ? /* @__PURE__ */ jsx9(ImagePlus2, { className: size === "sm" ? "h-4 w-4" : "h-5 w-5", "aria-hidden": "true" }) : isImage ? /* @__PURE__ */ jsx9("img", { src: path, alt: alt ?? "Selected media", className: "h-full w-full object-cover" }) : /* @__PURE__ */ jsx9(FileText, { className: size === "sm" ? "h-4 w-4" : "h-5 w-5", "aria-hidden": "true" })
+    }
+  );
+}
+function PickerThumbnailStack({ paths }) {
+  if (paths.length === 0) {
+    return /* @__PURE__ */ jsx9("span", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bfml-surface)] text-[var(--bfml-primary)] sm:h-12 sm:w-12", children: /* @__PURE__ */ jsx9(ImagePlus2, { className: "h-5 w-5", "aria-hidden": "true" }) });
+  }
+  if (paths.length === 1) {
+    return /* @__PURE__ */ jsx9(PickerThumbnail, { path: paths[0], alt: "Selected media" });
+  }
+  const visible = paths.slice(0, 3);
+  return /* @__PURE__ */ jsxs5("span", { className: "relative flex h-10 w-10 shrink-0 items-center sm:h-12 sm:w-12", children: [
+    visible.map((path, index) => /* @__PURE__ */ jsx9(
+      "span",
+      {
+        className: cn(
+          "absolute overflow-hidden rounded-full border-2 border-[var(--bfml-surface-soft)] bg-[var(--bfml-surface)]",
+          index === 0 && "left-0 top-0 z-30 h-7 w-7 sm:h-8 sm:w-8",
+          index === 1 && "left-3 top-1 z-20 h-7 w-7 sm:left-4 sm:h-8 sm:w-8",
+          index === 2 && "left-1 top-3 z-10 h-7 w-7 sm:top-4 sm:h-8 sm:w-8"
+        ),
+        children: /* @__PURE__ */ jsx9(PickerThumbnail, { path, size: "grid", shape: "circle", className: "h-full w-full border-0" })
+      },
+      `${path}-${index}`
+    )),
+    paths.length > 3 ? /* @__PURE__ */ jsxs5("span", { className: "absolute -bottom-0.5 -right-0.5 z-40 rounded-full bg-[var(--bfml-primary)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[var(--bfml-primary-foreground)]", children: [
+      "+",
+      paths.length - 3
+    ] }) : null
+  ] });
+}
+
+// src/components/media-picker.tsx
+import { jsx as jsx10, jsxs as jsxs6 } from "react/jsx-runtime";
 function MediaPicker({
   name,
   label = "Choose image",
   title = "Media Library",
   description = "Create folders, upload files, and choose media.",
-  previewTitle = "Live preview",
-  previewDescription = "The selected media library file will be used in the table and detail page.",
   value,
   defaultValue = "",
   onChange,
@@ -1092,38 +1208,36 @@ function MediaPicker({
   const rootProps = bfmlRootProps(themeMode);
   const [open, setOpen] = useState3(false);
   const [selectedPath, setSelectedPath] = useState3(value ?? defaultValue);
+  useEffect3(() => {
+    if (value !== void 0) setSelectedPath(value);
+  }, [value]);
   function handleSelect(file) {
     setSelectedPath(file.url);
     onChange?.(file.url);
     setOpen(false);
   }
   const currentValue = value ?? selectedPath;
-  return /* @__PURE__ */ jsxs5("div", { ...rootProps, className: cn(rootProps.className, "space-y-4", className), children: [
-    label ? /* @__PURE__ */ jsx9("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
-    /* @__PURE__ */ jsxs5(
+  const fileName = currentValue ? fileNameFromPath(currentValue) : null;
+  return /* @__PURE__ */ jsxs6("div", { ...rootProps, className: cn(rootProps.className, "space-y-2", className), children: [
+    label ? /* @__PURE__ */ jsx10("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
+    /* @__PURE__ */ jsxs6(
       "button",
       {
         type: "button",
         onClick: () => setOpen(true),
         className: "flex w-full items-center gap-3 rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] px-3 py-3 text-left transition hover:border-[var(--bfml-primary-border)] hover:bg-[var(--bfml-surface)] sm:gap-4 sm:px-4 sm:py-4",
         children: [
-          /* @__PURE__ */ jsx9("span", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bfml-surface)] text-[var(--bfml-primary)] sm:h-12 sm:w-12", children: /* @__PURE__ */ jsx9(ImagePlus2, { className: "h-5 w-5", "aria-hidden": "true" }) }),
-          /* @__PURE__ */ jsxs5("span", { className: "min-w-0 flex-1", children: [
-            /* @__PURE__ */ jsx9("span", { className: "block text-sm font-semibold text-[var(--bfml-foreground)]", children: label }),
-            /* @__PURE__ */ jsx9("span", { className: "mt-0.5 block text-xs text-[var(--bfml-muted-foreground)]", children: "Select from folders or upload new" })
+          /* @__PURE__ */ jsx10(PickerThumbnail, { path: currentValue, alt: fileName ?? label }),
+          /* @__PURE__ */ jsxs6("span", { className: "min-w-0 flex-1", children: [
+            /* @__PURE__ */ jsx10("span", { className: "block truncate text-sm font-semibold text-[var(--bfml-foreground)]", children: label }),
+            /* @__PURE__ */ jsx10("span", { className: "mt-0.5 block truncate text-xs text-[var(--bfml-muted-foreground)]", children: fileName ?? "Select from folders or upload new" })
           ] }),
-          /* @__PURE__ */ jsx9(Upload2, { className: "hidden h-5 w-5 shrink-0 text-[var(--bfml-muted-foreground)] sm:block", "aria-hidden": "true" })
+          /* @__PURE__ */ jsx10(Upload2, { className: "hidden h-5 w-5 shrink-0 text-[var(--bfml-muted-foreground)] sm:block", "aria-hidden": "true" })
         ]
       }
     ),
-    /* @__PURE__ */ jsx9("input", { type: "hidden", name, value: currentValue }),
-    /* @__PURE__ */ jsxs5("div", { className: "rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] p-3 sm:p-4", children: [
-      /* @__PURE__ */ jsx9("p", { className: "text-sm font-semibold text-[var(--bfml-foreground)]", children: previewTitle }),
-      /* @__PURE__ */ jsx9("p", { className: "mt-1 text-xs text-[var(--bfml-muted-foreground)]", children: previewDescription }),
-      /* @__PURE__ */ jsx9("div", { className: "mt-4", children: /* @__PURE__ */ jsx9(MediaPreview, { path: currentValue, alt: fileNameFromPath(currentValue) }) }),
-      currentValue ? /* @__PURE__ */ jsx9("p", { className: "mt-2 truncate text-xs text-[var(--bfml-muted-foreground)]", children: fileNameFromPath(currentValue) }) : null
-    ] }),
-    /* @__PURE__ */ jsx9(
+    /* @__PURE__ */ jsx10("input", { type: "hidden", name, value: currentValue }),
+    /* @__PURE__ */ jsx10(
       MediaLibraryModal,
       {
         open,
@@ -1140,9 +1254,9 @@ function MediaPicker({
 }
 
 // src/components/media-picker-multi.tsx
-import { useState as useState4 } from "react";
-import { ImagePlus as ImagePlus3, Upload as Upload3, X as X3 } from "lucide-react";
-import { jsx as jsx10, jsxs as jsxs6 } from "react/jsx-runtime";
+import { useEffect as useEffect4, useState as useState4 } from "react";
+import { Upload as Upload3, X as X3 } from "lucide-react";
+import { jsx as jsx11, jsxs as jsxs7 } from "react/jsx-runtime";
 function MediaPickerMulti({
   name,
   label = "Choose attachments",
@@ -1161,11 +1275,18 @@ function MediaPickerMulti({
   const rootProps = bfmlRootProps(themeMode);
   const [open, setOpen] = useState4(false);
   const [selectedPaths, setSelectedPaths] = useState4(values ?? defaultValues);
+  useEffect4(() => {
+    if (values !== void 0) setSelectedPaths(values);
+  }, [values]);
   const currentValues = values ?? selectedPaths;
-  function handleSelect(file) {
+  const atMax = currentValues.length >= max;
+  function handleSelectMany(files) {
     setSelectedPaths((current) => {
-      if (current.includes(file.url) || current.length >= max) return current;
-      const next = [...current, file.url];
+      const next = [...current];
+      for (const file of files) {
+        if (next.includes(file.url) || next.length >= max) continue;
+        next.push(file.url);
+      }
       onChange?.(next);
       return next;
     });
@@ -1178,52 +1299,62 @@ function MediaPickerMulti({
       return next;
     });
   }
-  return /* @__PURE__ */ jsxs6("div", { ...rootProps, className: cn(rootProps.className, "space-y-4", className), children: [
-    label ? /* @__PURE__ */ jsx10("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
-    /* @__PURE__ */ jsxs6(
-      "button",
-      {
-        type: "button",
-        onClick: () => setOpen(true),
-        disabled: currentValues.length >= max,
-        className: "flex w-full items-center gap-3 rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)] px-3 py-3 text-left transition hover:border-[var(--bfml-primary-border)] hover:bg-[var(--bfml-surface)] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:px-4 sm:py-4",
-        children: [
-          /* @__PURE__ */ jsx10("span", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bfml-surface)] text-[var(--bfml-primary)] sm:h-12 sm:w-12", children: /* @__PURE__ */ jsx10(ImagePlus3, { className: "h-5 w-5", "aria-hidden": "true" }) }),
-          /* @__PURE__ */ jsxs6("span", { className: "min-w-0 flex-1", children: [
-            /* @__PURE__ */ jsx10("span", { className: "block text-sm font-semibold text-[var(--bfml-foreground)]", children: label }),
-            /* @__PURE__ */ jsxs6("span", { className: "mt-0.5 block text-xs text-[var(--bfml-muted-foreground)]", children: [
-              "Select from folders or upload new (",
-              currentValues.length,
-              "/",
-              max,
-              ")"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx10(Upload3, { className: "hidden h-5 w-5 shrink-0 text-[var(--bfml-muted-foreground)] sm:block", "aria-hidden": "true" })
-        ]
-      }
-    ),
-    currentValues.map((path, index) => /* @__PURE__ */ jsx10("input", { type: "hidden", name: `${name}[${index}]`, value: path }, `${path}-${index}`)),
-    currentValues.length > 0 ? /* @__PURE__ */ jsx10("div", { className: "grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3", children: currentValues.map((path, index) => /* @__PURE__ */ jsxs6("div", { className: "relative rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] p-3", children: [
-      /* @__PURE__ */ jsx10(
+  return /* @__PURE__ */ jsxs7("div", { ...rootProps, className: cn(rootProps.className, "space-y-2", className), children: [
+    label ? /* @__PURE__ */ jsx11("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
+    /* @__PURE__ */ jsxs7("div", { className: "overflow-hidden rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)]", children: [
+      /* @__PURE__ */ jsxs7(
         "button",
         {
           type: "button",
-          className: "absolute right-2 top-2 rounded-md bg-[var(--bfml-surface)] p-1 shadow-sm",
-          onClick: () => removeAt(index),
-          title: "Remove attachment",
-          children: /* @__PURE__ */ jsx10(X3, { className: "h-4 w-4 text-[var(--bfml-destructive)]" })
+          onClick: () => setOpen(true),
+          disabled: atMax,
+          className: "flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-[var(--bfml-surface)] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:px-4 sm:py-4",
+          children: [
+            /* @__PURE__ */ jsx11(PickerThumbnailStack, { paths: currentValues }),
+            /* @__PURE__ */ jsxs7("span", { className: "min-w-0 flex-1", children: [
+              /* @__PURE__ */ jsx11("span", { className: "block truncate text-sm font-semibold text-[var(--bfml-foreground)]", children: label }),
+              /* @__PURE__ */ jsx11("span", { className: "mt-0.5 block text-xs text-[var(--bfml-muted-foreground)]", children: currentValues.length > 0 ? `${currentValues.length} selected \xB7 click to add more (${currentValues.length}/${max})` : `Select from folders or upload new (0/${max})` })
+            ] }),
+            /* @__PURE__ */ jsx11(Upload3, { className: "hidden h-5 w-5 shrink-0 text-[var(--bfml-muted-foreground)] sm:block", "aria-hidden": "true" })
+          ]
         }
       ),
-      /* @__PURE__ */ jsx10(MediaPreview, { path, alt: fileNameFromPath(path) }),
-      /* @__PURE__ */ jsx10("p", { className: "mt-2 truncate text-xs text-[var(--bfml-muted-foreground)]", children: fileNameFromPath(path) })
-    ] }, `${path}-${index}`)) }) : null,
-    /* @__PURE__ */ jsx10(
+      currentValues.length > 0 ? /* @__PURE__ */ jsx11("div", { className: "grid grid-cols-3 gap-2 border-t border-[var(--bfml-border)] bg-[var(--bfml-surface)] p-3 sm:grid-cols-4 sm:p-4", children: currentValues.map((path, index) => {
+        const fileName = fileNameFromPath(path);
+        const isImage = isImagePath(path);
+        return /* @__PURE__ */ jsxs7(
+          "div",
+          {
+            className: "group relative aspect-square overflow-hidden rounded-lg border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)]",
+            children: [
+              isImage ? /* @__PURE__ */ jsx11("img", { src: path, alt: fileName, className: "h-full w-full object-cover" }) : /* @__PURE__ */ jsx11("div", { className: "flex h-full w-full flex-col items-center justify-center gap-1 px-1 text-center text-[var(--bfml-muted-foreground)]", children: /* @__PURE__ */ jsx11("span", { className: "text-[10px] font-semibold uppercase", children: "PDF" }) }),
+              /* @__PURE__ */ jsx11(
+                "button",
+                {
+                  type: "button",
+                  className: "absolute right-1 top-1 rounded-md border border-[var(--bfml-border)] bg-[var(--bfml-surface)] p-1 shadow-sm transition hover:bg-[var(--bfml-destructive-soft)]",
+                  onClick: () => removeAt(index),
+                  title: "Remove attachment",
+                  children: /* @__PURE__ */ jsx11(X3, { className: "h-3 w-3 text-[var(--bfml-destructive)]" })
+                }
+              ),
+              /* @__PURE__ */ jsx11("div", { className: "absolute inset-x-0 bottom-0 bg-[var(--bfml-overlay)] px-1.5 py-1", children: /* @__PURE__ */ jsx11("p", { className: "truncate text-[10px] font-medium text-[var(--bfml-primary-foreground)]", children: fileName }) })
+            ]
+          },
+          `${path}-${index}`
+        );
+      }) }) : null
+    ] }),
+    currentValues.map((path, index) => /* @__PURE__ */ jsx11("input", { type: "hidden", name: `${name}[${index}]`, value: path }, `${path}-${index}`)),
+    /* @__PURE__ */ jsx11(
       MediaLibraryModal,
       {
         open,
         onClose: () => setOpen(false),
-        onSelect: handleSelect,
+        onSelectMany: handleSelectMany,
+        selectionMode: "multi",
+        maxSelections: Math.max(0, max - currentValues.length),
+        autoSelectUploads: true,
         config,
         theme: themeMode,
         title,

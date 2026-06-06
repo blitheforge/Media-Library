@@ -1,3 +1,4 @@
+import * as react_jsx_runtime from 'react/jsx-runtime';
 import * as react from 'react';
 
 type MediaLibraryThemeMode$1 = "sync" | "light" | "dark";
@@ -55,8 +56,17 @@ type MediaLibraryPanelProps = {
     variant?: "modal" | "embedded";
     /** Show selection footer with Done button (picker flow). */
     selectable?: boolean;
+    /** Close modal after selecting a file. Default true. */
+    closeOnSelect?: boolean;
+    /** `multi` allows selecting several files before confirming. Default `single`. */
+    selectionMode?: "single" | "multi";
+    /** Max files that can be added in one modal session (multi mode). */
+    maxSelections?: number;
+    /** After upload completes, add uploaded files and close (multi picker). */
+    autoSelectUploads?: boolean;
     onClose?: () => void;
     onSelect?: (file: MediaFile) => void;
+    onSelectMany?: (files: MediaFile[]) => void;
     className?: string;
 };
 type MediaLibraryWidgetProps = {
@@ -76,7 +86,12 @@ type MediaLibraryWidgetProps = {
 type MediaLibraryModalProps = {
     open: boolean;
     onClose: () => void;
-    onSelect: (file: MediaFile) => void;
+    onSelect?: (file: MediaFile) => void;
+    onSelectMany?: (files: MediaFile[]) => void;
+    closeOnSelect?: boolean;
+    selectionMode?: "single" | "multi";
+    maxSelections?: number;
+    autoSelectUploads?: boolean;
     config?: Partial<MediaLibraryConfig>;
     theme?: MediaLibraryThemeMode$1;
     title?: string;
@@ -88,7 +103,9 @@ type MediaPickerProps = {
     label?: string;
     title?: string;
     description?: string;
+    /** @deprecated Preview is shown inline in the picker button. */
     previewTitle?: string;
+    /** @deprecated Preview is shown inline in the picker button. */
     previewDescription?: string;
     value?: string;
     defaultValue?: string;
@@ -137,19 +154,19 @@ declare function fileMatchesAcceptForUpload(file: File, accept?: Array<"image" |
 declare function fileNameFromPath(path: string): string;
 declare function isImagePath(path: string): boolean;
 
-declare function MediaLibraryModal({ open, onClose, onSelect, config, theme, title, description, accept }: MediaLibraryModalProps): react.ReactPortal | null;
+declare function MediaLibraryModal({ open, onClose, onSelect, onSelectMany, closeOnSelect, selectionMode, maxSelections, autoSelectUploads, config, theme, title, description, accept }: MediaLibraryModalProps): react.ReactPortal | null;
 declare function MediaPreview({ path, alt }: {
     path: string;
     alt?: string;
-}): react.JSX.Element;
+}): react_jsx_runtime.JSX.Element;
 
-declare function MediaLibraryPanel({ active, config, theme, title, description, accept, variant, selectable, onClose, onSelect, className }: MediaLibraryPanelProps): react.JSX.Element | null;
+declare function MediaLibraryPanel({ active, config, theme, title, description, accept, variant, selectable, closeOnSelect, selectionMode, maxSelections, autoSelectUploads, onClose, onSelect, onSelectMany, className }: MediaLibraryPanelProps): react_jsx_runtime.JSX.Element | null;
 
-declare function MediaLibraryWidget({ width, height, config, theme, title, description, accept, selectable, onSelect, className }: MediaLibraryWidgetProps): react.JSX.Element;
+declare function MediaLibraryWidget({ width, height, config, theme, title, description, accept, selectable, onSelect, className }: MediaLibraryWidgetProps): react_jsx_runtime.JSX.Element;
 
-declare function MediaPicker({ name, label, title, description, previewTitle, previewDescription, value, defaultValue, onChange, config, theme, accept, className }: MediaPickerProps): react.JSX.Element;
+declare function MediaPicker({ name, label, title, description, value, defaultValue, onChange, config, theme, accept, className }: MediaPickerProps): react_jsx_runtime.JSX.Element;
 
-declare function MediaPickerMulti({ name, label, title, description, max, values, defaultValues, onChange, config, theme, accept, className }: MediaPickerMultiProps): react.JSX.Element;
+declare function MediaPickerMulti({ name, label, title, description, max, values, defaultValues, onChange, config, theme, accept, className }: MediaPickerMultiProps): react_jsx_runtime.JSX.Element;
 
 type MediaLibraryThemeMode = "sync" | "light" | "dark";
 declare function bfmlRootProps(theme?: MediaLibraryThemeMode): {

@@ -40,7 +40,12 @@ In your app entry (e.g. `app/layout.tsx` or `main.tsx`):
 
 ```tsx
 import "@blitheforge/media-library/styles.css";
+import "./globals.css";
 ```
+
+Import the library **before** your globals. Library utilities are scoped to a lower CSS layer so they will not override your app's responsive classes (e.g. `lg:block`).
+
+Do **not** add `@source` for this package in your app Tailwind config.
 
 ### 2. Next.js (App Router)
 
@@ -528,36 +533,3 @@ import type {
   MediaLibraryThemeMode
 } from "@blitheforge/media-library";
 ```
-
----
-
-## Development
-
-From the package directory:
-
-```bash
-npm install
-npm run build      # JS + CSS
-npm run dev        # watch mode
-npm run typecheck
-```
-
----
-
-## Publish
-
-```bash
-npm login
-npm publish --access public
-```
-
-`prepublishOnly` runs `npm run build` automatically.
-
----
-
-## License
-
-MIT
-# Media-Library
-# Media-Library
-# Media-Library
