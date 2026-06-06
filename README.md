@@ -1,9 +1,10 @@
 # @blitheforge/media-library
 
-Production-ready React media library with nested folders, drag-and-drop upload, search, RBAC-driven UI, toast notifications, and configurable API URLs. Built with Tailwind CSS — works in Next.js, Vite, or any React 18+ app.
+Production-ready React media library with **pre-built, scoped CSS** — no Tailwind required in your app. Works in Next.js, Vite, plain React, or vanilla JavaScript (headless API).
 
 ## Features
 
+- **Self-contained CSS** — import one file; styles are scoped to `.bfml-root` and won't break your app layout
 - **Nested folder management** — browse, create, and delete folders
 - **File upload** — click to upload or drag-and-drop; files upload one-by-one with live preview cards in the grid
 - **5 MB client-side limit** — oversized files show a warning toast and are skipped (configurable via `MAX_MEDIA_UPLOAD_BYTES`)
@@ -34,26 +35,25 @@ npm install react react-dom
 
 ## Setup
 
-### 1. Import styles once
+### 1. Import the bundled CSS once
 
-In your app entry (e.g. `app/layout.tsx` or `main.tsx`):
+The package ships a complete CSS file built from Tailwind at publish time. **Your app does not need Tailwind.**
 
 ```tsx
+// React — app/layout.tsx, main.tsx, etc.
 import "@blitheforge/media-library/styles.css";
-import "./globals.css";
 ```
 
-Import the library **before** your globals. Library utilities live in a lower CSS layer (`bfml`) so they will not override your app's responsive classes (e.g. `hidden lg:block` on sidebars).
-
-**Required for npm installs** — add this to your `globals.css` so Tailwind generates library classes in your app's utilities layer:
-
-```css
-@source "../../node_modules/@blitheforge/media-library/dist/index.js";
+```html
+<!-- Vanilla HTML / any framework -->
+<link rel="stylesheet" href="/node_modules/@blitheforge/media-library/dist/style.css" />
 ```
 
-Do **not** add `@source` for this package in your app Tailwind config.
+Styles are scoped under `.bfml-root`, so they will **not** override your app's `hidden`, `flex`, `lg:block`, etc.
 
-### 2. Next.js (App Router)
+If your app also uses Tailwind, import the library CSS **before or after** your globals — both work with scoped styles. You do **not** need `@source` for this package.
+
+### 2. React (Next.js App Router)
 
 Add the package to `transpilePackages` in `next.config.ts`:
 
@@ -64,14 +64,50 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-### 3. Monorepo / workspace
+### 3. Vanilla JavaScript (no React)
+
+Use the headless client for upload/list/delete from any JS project:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/@blitheforge/media-library/dist/style.css" />
+<script type="module">
+  import { createMediaLibraryClient } from "https://unpkg.com/@blitheforge/media-library/dist/client.js";
+
+  const client = createMediaLibraryClient({
+    listUrl: "/api/media",
+    uploadUrl: "/api/media/upload",
+    createFolderUrl: "/api/media/folders",
+    deleteUrl: "/api/media"
+  });
+
+  const listing = await client.list("");
+  console.log(listing.files);
+
+  // Upload from a file input
+  document.querySelector("#files").addEventListener("change", async (event) => {
+    const files = [...event.target.files];
+    const uploaded = await client.upload("", files);
+    console.log(uploaded);
+  });
+</script>
+```
+
+Node / bundler:
+
+```js
+import { createMediaLibraryClient } from "@blitheforge/media-library/client";
+```
+
+React UI components (`MediaPicker`, `MediaLibraryModal`, etc.) still require React. The `/client` export has **no React dependency**.
+
+### 4. Monorepo / workspace
 
 Link the local package via pnpm workspace:
 
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - "Blitheforge-media-library"
+  - "package"
   - "."
 ```
 
@@ -87,7 +123,7 @@ packages:
 Rebuild after package changes:
 
 ```bash
-cd Blitheforge-media-library && npm run build
+cd package && pnpm build
 ```
 
 ---

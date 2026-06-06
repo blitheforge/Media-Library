@@ -39,7 +39,8 @@ export function MediaPicker({
   const fileName = currentValue ? fileNameFromPath(currentValue) : null;
 
   return (
-    <div {...rootProps} className={cn(rootProps.className, "space-y-2", className)}>
+    <div {...rootProps}>
+      <div className={cn("space-y-2", className)}>
       {label ? <label className="text-sm font-medium text-[var(--bfml-foreground)]">{label}</label> : null}
 
       <button
@@ -69,6 +70,7 @@ export function MediaPicker({
         description={description}
         accept={accept}
       />
+      </div>
     </div>
   );
 }

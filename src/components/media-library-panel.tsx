@@ -399,17 +399,16 @@ export function MediaLibraryPanel({
   );
 
   return (
-    <section
-      {...rootProps}
-      className={cn(
-        rootProps.className,
-        "relative flex h-full min-h-0 flex-col overflow-hidden bg-[var(--bfml-surface)]",
-        variant === "modal" &&
-          "h-[100dvh] w-full max-w-none border-0 shadow-[var(--bfml-shadow-lg)] sm:h-[min(92vh,760px)] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-[var(--bfml-border)]",
-        variant === "embedded" && "rounded-none border-0 shadow-none",
-        className
-      )}
-    >
+    <div {...rootProps} className="h-full min-h-0">
+      <section
+        className={cn(
+          "relative flex h-full min-h-0 flex-col overflow-hidden bg-[var(--bfml-surface)]",
+          variant === "modal" &&
+            "h-[100dvh] w-full max-w-none border-0 shadow-[var(--bfml-shadow-lg)] sm:h-[min(92vh,760px)] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-[var(--bfml-border)]",
+          variant === "embedded" && "rounded-none border-0 shadow-none",
+          className
+        )}
+      >
       <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--bfml-border)] px-4 py-3 sm:gap-4 sm:px-6 sm:py-5">
         <div className="min-w-0 pr-2">
           <h2 className="truncate text-base font-semibold text-[var(--bfml-foreground)] sm:text-lg">{title}</h2>
@@ -707,5 +706,6 @@ export function MediaLibraryPanel({
         theme={themeMode}
       />
     </section>
+    </div>
   );
 }

@@ -22,19 +22,18 @@ export function MediaLibraryWidget({
   const rootProps = bfmlRootProps(themeMode);
 
   return (
-    <div
-      {...rootProps}
-      className={cn(
-        rootProps.className,
-        "overflow-hidden rounded-2xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] shadow-[var(--bfml-shadow-lg)]",
-        className
-      )}
-      style={{
-        width: toCssSize(width),
-        height: toCssSize(height)
-      }}
-    >
-      <MediaLibraryPanel
+    <div {...rootProps}>
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] shadow-[var(--bfml-shadow-lg)]",
+          className
+        )}
+        style={{
+          width: toCssSize(width),
+          height: toCssSize(height)
+        }}
+      >
+        <MediaLibraryPanel
         active
         variant="embedded"
         config={config}
@@ -46,6 +45,7 @@ export function MediaLibraryWidget({
         onSelect={onSelect}
         className="h-full"
       />
+      </div>
     </div>
   );
 }

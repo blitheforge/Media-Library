@@ -1,7 +1,7 @@
 {
   "name": "@blitheforge/media-library",
-  "version": "1.0.8",
-  "description": "Tailwind-based React media library with nested folders, upload, and configurable API URLs.",
+  "version": "1.1.1",
+  "description": "Self-contained React media library with pre-built CSS. Works with or without Tailwind in your app.",
   "license": "MIT",
   "author": "Mahadi Hasan",
   "email": "mehedibuet11@gmail.com",
@@ -9,9 +9,10 @@
     "react",
     "media-library",
     "file-upload",
-    "tailwind",
     "folder",
-    "image-picker"
+    "image-picker",
+    "vanilla-js",
+    "headless"
   ],
   "repository": {
     "type": "git",
@@ -31,6 +32,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
     "./styles.css": "./dist/style.css"
   },
   "files": [
@@ -42,16 +48,20 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "npm run build:js && npm run build:css",
+    "build": "rm -rf dist && tsup && node ./scripts/build-css.mjs",
     "build:js": "tsup",
-    "build:css": "tailwindcss -i ./src/styles.css -o ./dist/style.css --minify",
+    "build:css": "node ./scripts/build-css.mjs",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -62,6 +72,8 @@
     "@tailwindcss/cli": "^4.2.4",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.6",
+    "postcss-prefixwrap": "^1.57.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.4",

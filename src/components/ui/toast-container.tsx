@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, TriangleAlert, X, XCircle } from "lucide-react";
 import type { MediaLibraryThemeMode } from "../../theme";
 import { dismissToast, subscribeToasts, type ToastItem } from "../../utils/toast-store";
-import { bfmlRootProps } from "../../utils/bfml-theme";
 import { cn } from "../../utils/cn";
 
 function ToastCard({ toast }: { toast: ToastItem }) {
@@ -43,7 +42,7 @@ function ToastCard({ toast }: { toast: ToastItem }) {
 
 export function ToastContainer({ theme = "sync" }: { theme?: MediaLibraryThemeMode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
-  const rootProps = bfmlRootProps(theme);
+  void theme;
 
   useEffect(() => {
     return subscribeToasts(setItems);
@@ -52,10 +51,7 @@ export function ToastContainer({ theme = "sync" }: { theme?: MediaLibraryThemeMo
   if (items.length === 0) return null;
 
   return (
-    <div
-      {...rootProps}
-      className={cn(rootProps.className, "pointer-events-none absolute right-3 top-3 z-[45] flex w-[min(100%,20rem)] flex-col items-end gap-2 sm:right-4 sm:top-4")}
-    >
+    <div className="pointer-events-none absolute right-3 top-3 z-[45] flex w-[min(100%,20rem)] flex-col items-end gap-2 sm:right-4 sm:top-4">
       {items.map((toast) => (
         <ToastCard key={toast.id} toast={toast} />
       ))}

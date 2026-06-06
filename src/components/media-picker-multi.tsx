@@ -56,7 +56,8 @@ export function MediaPickerMulti({
   }
 
   return (
-    <div {...rootProps} className={cn(rootProps.className, "space-y-2", className)}>
+    <div {...rootProps}>
+      <div className={cn("space-y-2", className)}>
       {label ? <label className="text-sm font-medium text-[var(--bfml-foreground)]">{label}</label> : null}
 
       <div className="overflow-hidden rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)]">
@@ -130,6 +131,7 @@ export function MediaPickerMulti({
         description={description}
         accept={accept}
       />
+      </div>
     </div>
   );
 }

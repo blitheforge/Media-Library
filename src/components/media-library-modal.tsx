@@ -1,5 +1,4 @@
 import { createPortal } from "react-dom";
-import { cn } from "../utils/cn";
 import { bfmlRootProps, resolveThemeMode } from "../utils/bfml-theme";
 import { defaultMediaLibraryConfig } from "../types";
 import type { MediaLibraryModalProps } from "../types";
@@ -28,31 +27,29 @@ export function MediaLibraryModal({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div
-      {...rootProps}
-      className={cn(
-        rootProps.className,
-        "fixed inset-0 z-[9999] flex items-stretch justify-center p-0 backdrop-blur-sm sm:items-center sm:p-2 md:p-4"
-      )}
-      style={{ backgroundColor: "var(--bfml-overlay)" }}
-    >
-      <MediaLibraryPanel
-        active={open}
-        variant="modal"
-        selectable
-        config={config}
-        theme={theme}
-        title={title}
-        description={description}
-        accept={accept}
-        onClose={onClose}
-        onSelect={onSelect}
-        onSelectMany={onSelectMany}
-        closeOnSelect={closeOnSelect}
-        selectionMode={selectionMode}
-        maxSelections={maxSelections}
-        autoSelectUploads={autoSelectUploads}
-      />
+    <div {...rootProps}>
+      <div
+        className="fixed inset-0 z-[10050] flex items-stretch justify-center p-0 backdrop-blur-sm sm:items-center sm:p-2 md:p-4"
+        style={{ backgroundColor: "var(--bfml-overlay)" }}
+      >
+        <MediaLibraryPanel
+          active={open}
+          variant="modal"
+          selectable
+          config={config}
+          theme={theme}
+          title={title}
+          description={description}
+          accept={accept}
+          onClose={onClose}
+          onSelect={onSelect}
+          onSelectMany={onSelectMany}
+          closeOnSelect={closeOnSelect}
+          selectionMode={selectionMode}
+          maxSelections={maxSelections}
+          autoSelectUploads={autoSelectUploads}
+        />
+      </div>
     </div>,
     document.body
   );

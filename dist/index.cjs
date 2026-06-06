@@ -159,13 +159,6 @@ function isImagePath(path) {
 // src/components/media-library-modal.tsx
 var import_react_dom2 = require("react-dom");
 
-// src/utils/cn.ts
-var import_clsx = require("clsx");
-var import_tailwind_merge = require("tailwind-merge");
-function cn(...inputs) {
-  return (0, import_tailwind_merge.twMerge)((0, import_clsx.clsx)(inputs));
-}
-
 // src/utils/bfml-theme.ts
 function bfmlRootProps(theme = "sync") {
   return {
@@ -180,6 +173,13 @@ function resolveThemeMode(theme) {
 // src/components/media-library-panel.tsx
 var import_react2 = require("react");
 var import_lucide_react3 = require("lucide-react");
+
+// src/utils/cn.ts
+var import_clsx = require("clsx");
+var import_tailwind_merge = require("tailwind-merge");
+function cn(...inputs) {
+  return (0, import_tailwind_merge.twMerge)((0, import_clsx.clsx)(inputs));
+}
 
 // src/components/ui/button.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -222,11 +222,10 @@ function ConfirmDialog({
   if (!open || typeof document === "undefined") return null;
   const rootProps = bfmlRootProps(theme);
   return (0, import_react_dom.createPortal)(
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { ...rootProps, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       "div",
       {
-        ...rootProps,
-        className: cn(rootProps.className, "fixed inset-0 z-[10001] flex items-end justify-center p-0 backdrop-blur-sm sm:items-center sm:p-4"),
+        className: "fixed inset-0 z-[10060] flex items-end justify-center p-0 backdrop-blur-sm sm:items-center sm:p-4",
         style: { backgroundColor: "var(--bfml-overlay)" },
         role: "presentation",
         onClick: onCancel,
@@ -250,7 +249,7 @@ function ConfirmDialog({
           }
         )
       }
-    ),
+    ) }),
     document.body
   );
 }
@@ -347,19 +346,12 @@ function ToastCard({ toast }) {
 }
 function ToastContainer({ theme = "sync" }) {
   const [items, setItems] = (0, import_react.useState)([]);
-  const rootProps = bfmlRootProps(theme);
+  void theme;
   (0, import_react.useEffect)(() => {
     return subscribeToasts(setItems);
   }, []);
   if (items.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-    "div",
-    {
-      ...rootProps,
-      className: cn(rootProps.className, "pointer-events-none absolute right-3 top-3 z-[45] flex w-[min(100%,20rem)] flex-col items-end gap-2 sm:right-4 sm:top-4"),
-      children: items.map((toast) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ToastCard, { toast }, toast.id))
-    }
-  );
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "pointer-events-none absolute right-3 top-3 z-[45] flex w-[min(100%,20rem)] flex-col items-end gap-2 sm:right-4 sm:top-4", children: items.map((toast) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ToastCard, { toast }, toast.id)) });
 }
 
 // src/components/upload-preview.tsx
@@ -786,12 +778,10 @@ function MediaLibraryPanel({
       folder.path || "root"
     );
   }) });
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { ...rootProps, className: "h-full min-h-0", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
     "section",
     {
-      ...rootProps,
       className: cn(
-        rootProps.className,
         "relative flex h-full min-h-0 flex-col overflow-hidden bg-[var(--bfml-surface)]",
         variant === "modal" && "h-[100dvh] w-full max-w-none border-0 shadow-[var(--bfml-shadow-lg)] sm:h-[min(92vh,760px)] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-[var(--bfml-border)]",
         variant === "embedded" && "rounded-none border-0 shadow-none",
@@ -1058,7 +1048,7 @@ function MediaLibraryPanel({
         )
       ]
     }
-  );
+  ) });
 }
 
 // src/components/media-library-modal.tsx
@@ -1083,14 +1073,10 @@ function MediaLibraryModal({
   const rootProps = bfmlRootProps(themeMode);
   if (!open || typeof document === "undefined") return null;
   return (0, import_react_dom2.createPortal)(
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { ...rootProps, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
       "div",
       {
-        ...rootProps,
-        className: cn(
-          rootProps.className,
-          "fixed inset-0 z-[9999] flex items-stretch justify-center p-0 backdrop-blur-sm sm:items-center sm:p-2 md:p-4"
-        ),
+        className: "fixed inset-0 z-[10050] flex items-stretch justify-center p-0 backdrop-blur-sm sm:items-center sm:p-2 md:p-4",
         style: { backgroundColor: "var(--bfml-overlay)" },
         children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
           MediaLibraryPanel,
@@ -1113,7 +1099,7 @@ function MediaLibraryModal({
           }
         )
       }
-    ),
+    ) }),
     document.body
   );
 }
@@ -1145,12 +1131,10 @@ function MediaLibraryWidget({
   const resolved = { ...defaultMediaLibraryConfig, ...config };
   const themeMode = resolveThemeMode(theme ?? resolved.theme);
   const rootProps = bfmlRootProps(themeMode);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { ...rootProps, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
     "div",
     {
-      ...rootProps,
       className: cn(
-        rootProps.className,
         "overflow-hidden rounded-2xl border border-[var(--bfml-border)] bg-[var(--bfml-surface)] shadow-[var(--bfml-shadow-lg)]",
         className
       ),
@@ -1174,7 +1158,7 @@ function MediaLibraryWidget({
         }
       )
     }
-  );
+  ) });
 }
 
 // src/components/media-picker.tsx
@@ -1270,7 +1254,7 @@ function MediaPicker({
   }
   const currentValue = value ?? selectedPath;
   const fileName = currentValue ? fileNameFromPath(currentValue) : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { ...rootProps, className: cn(rootProps.className, "space-y-2", className), children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { ...rootProps, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: cn("space-y-2", className), children: [
     label ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
       "button",
@@ -1302,7 +1286,7 @@ function MediaPicker({
         accept
       }
     )
-  ] });
+  ] }) });
 }
 
 // src/components/media-picker-multi.tsx
@@ -1351,7 +1335,7 @@ function MediaPickerMulti({
       return next;
     });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { ...rootProps, className: cn(rootProps.className, "space-y-2", className), children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { ...rootProps, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: cn("space-y-2", className), children: [
     label ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("label", { className: "text-sm font-medium text-[var(--bfml-foreground)]", children: label }) : null,
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "overflow-hidden rounded-xl border border-[var(--bfml-border)] bg-[var(--bfml-surface-soft)]", children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
@@ -1414,7 +1398,7 @@ function MediaPickerMulti({
         accept
       }
     )
-  ] });
+  ] }) });
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
