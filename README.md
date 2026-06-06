@@ -86,6 +86,29 @@ cd Blitheforge-media-library && npm run build
 
 ---
 
+## Publishing
+
+Pushes to `main` run `.github/workflows/publish.yml`. The workflow
+typechecks and builds the package, then publishes it only when the version in
+`package.json` is not already present on npm.
+
+Before the first automated publish:
+
+1. Create an npm granular access token with **Bypass 2FA** enabled and
+   **Read and write** package permission for the `@blitheforge` scope.
+2. In the GitHub repository, open **Settings > Secrets and variables >
+   Actions**.
+3. Add the token as a repository secret named `NPM_TOKEN`.
+
+For each release, bump the package version and push to `main`:
+
+```bash
+npm version patch
+git push --follow-tags
+```
+
+---
+
 ## Theming
 
 Default is **`theme="sync"`** — the library reads your app's CSS variables:
