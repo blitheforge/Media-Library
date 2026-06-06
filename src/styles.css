@@ -1,6 +1,7 @@
 @layer bfml;
-@import "tailwindcss/utilities" layer(bfml);
 @source "./**/*.{ts,tsx}";
+@import "tailwindcss/theme" layer(bfml);
+@import "tailwindcss/utilities" layer(bfml);
 
 .bfml-root {
   /* Inherit host design tokens when present; fall back to package defaults. */
