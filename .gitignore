@@ -1,6 +1,7 @@
-src/
+/dist
 tsconfig.json
 tsup.config.ts
 node_modules/
 *.log
 .DS_Store
+.npmignore

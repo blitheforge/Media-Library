@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+
+.bfml-root {
+  /* Inherit host design tokens when present; fall back to package defaults. */
+  --bfml-background: var(--background, #f9fafb);
+  --bfml-foreground: var(--foreground, #111827);
+  --bfml-surface: var(--surface, #ffffff);
+  --bfml-surface-soft: var(--surface-soft, #f3f4f6);
+  --bfml-border: var(--border, #e5e7eb);
+  --bfml-muted-foreground: var(--muted-foreground, #6b7280);
+  --bfml-primary: var(--primary, #465fff);
+  --bfml-primary-foreground: var(--primary-foreground, #ffffff);
+  --bfml-primary-soft: var(--primary-soft, #eef4ff);
+  --bfml-primary-border: var(--primary-border, #c7d7ff);
+  --bfml-destructive: var(--destructive, #b42318);
+  --bfml-destructive-soft: var(--destructive-soft, #fef3f2);
+  --bfml-success: var(--accent, #12b76a);
+  --bfml-success-soft: var(--accent-soft, #ecfdf3);
+  --bfml-success-foreground: var(--foreground, #065f46);
+  --bfml-warning: var(--warning, #f79009);
+  --bfml-warning-soft: var(--warning-soft, #fffaeb);
+  --bfml-warning-foreground: var(--foreground, #92400e);
+  --bfml-overlay: rgb(15 23 42 / 0.55);
+  --bfml-shadow: var(--shadow, 0 1px 2px rgb(16 24 40 / 0.05));
+  --bfml-shadow-lg: var(--shadow-lg, 0 10px 30px rgb(16 24 40 / 0.08));
+
+  color: var(--bfml-foreground);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Follow host dark theme in sync mode. */
+:root[data-theme="dark"] .bfml-root,
+html[data-theme="dark"] .bfml-root {
+  --bfml-overlay: rgb(0 0 0 / 0.72);
+  --bfml-success-foreground: var(--foreground, #d1fae5);
+  --bfml-warning-foreground: var(--foreground, #fde68a);
+}
+
+/* Standalone light theme (other projects without host tokens). */
+.bfml-root[data-theme="light"] {
+  --bfml-background: #f9fafb;
+  --bfml-foreground: #111827;
+  --bfml-surface: #ffffff;
+  --bfml-surface-soft: #f3f4f6;
+  --bfml-border: #e5e7eb;
+  --bfml-muted-foreground: #6b7280;
+  --bfml-primary: #465fff;
+  --bfml-primary-foreground: #ffffff;
+  --bfml-primary-soft: #eef4ff;
+  --bfml-primary-border: #c7d7ff;
+  --bfml-destructive: #b42318;
+  --bfml-destructive-soft: #fef3f2;
+  --bfml-success: #12b76a;
+  --bfml-success-soft: #ecfdf3;
+  --bfml-success-foreground: #065f46;
+  --bfml-warning: #f79009;
+  --bfml-warning-soft: #fffaeb;
+  --bfml-warning-foreground: #92400e;
+  --bfml-overlay: rgb(15 23 42 / 0.55);
+  --bfml-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  --bfml-shadow-lg: 0 10px 30px rgb(16 24 40 / 0.08);
+}
+
+/* Standalone dark theme (other projects without host tokens). */
+.bfml-root[data-theme="dark"] {
+  --bfml-background: #101828;
+  --bfml-foreground: #f8fafc;
+  --bfml-surface: #111827;
+  --bfml-surface-soft: #1f2937;
+  --bfml-border: #1f2937;
+  --bfml-muted-foreground: #94a3b8;
+  --bfml-primary: #7592ff;
+  --bfml-primary-foreground: #ffffff;
+  --bfml-primary-soft: rgb(70 95 255 / 0.15);
+  --bfml-primary-border: rgb(70 95 255 / 0.35);
+  --bfml-destructive: #ef4444;
+  --bfml-destructive-soft: rgb(239 68 68 / 0.15);
+  --bfml-success: #32d583;
+  --bfml-success-soft: rgb(18 183 106 / 0.15);
+  --bfml-success-foreground: #d1fae5;
+  --bfml-warning: #fdb022;
+  --bfml-warning-soft: rgb(247 144 9 / 0.15);
+  --bfml-warning-foreground: #fde68a;
+  --bfml-overlay: rgb(0 0 0 / 0.72);
+  --bfml-shadow: 0 24px 70px rgb(0 0 0 / 0.42);
+  --bfml-shadow-lg: 0 24px 70px rgb(0 0 0 / 0.42);
+}
